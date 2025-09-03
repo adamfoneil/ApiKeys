@@ -10,11 +10,9 @@ public class ApiKeyRecord
     public DateTime CreatedAt { get; set; }
 }
 
-public class ApiKeyDbContext : DbContext
+public class ApiKeyDbContext(DbContextOptions<ApiKeyDbContext> options) : DbContext(options)
 {
-    public ApiKeyDbContext(DbContextOptions<ApiKeyDbContext> options) : base(options) { }
-
-    public DbSet<ApiKeyRecord> ApiKeys { get; set; }
+	public DbSet<ApiKeyRecord> ApiKeys { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
