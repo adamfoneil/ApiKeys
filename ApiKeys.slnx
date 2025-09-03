@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="ApiKeys.BlazorApp/ApiKeys.BlazorApp.csproj" />
   <Project Path="ApiKeys.Service/ApiKeys.Service.csproj" />
 </Solution>
