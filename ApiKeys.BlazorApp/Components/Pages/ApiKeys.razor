@@ -1,0 +1,139 @@
+@page "/apikeys"
+@using global::ApiKeys.Service
+@using Radzen.Blazor
+@inject SqliteApiKeyManager ApiKeyManager
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>API Keys</PageTitle>
+
+<h1>API Key Management</h1>
+
+<RadzenCard class="rz-mb-4">
+    <h3>Create New API Key</h3>
+    <RadzenStack Gap="1rem">
+        <div>
+            <RadzenLabel Text="Key Name:" />
+            <RadzenTextBox @bind-Value="newKeyName" @oninput="OnKeyNameChanged" Placeholder="Enter a name for your API key" class="w-100" />
+        </div>
+        <div>
+            <RadzenButton Text="Generate API Key" ButtonStyle="ButtonStyle.Primary" 
+                         Click="GenerateNewKey" Disabled="@(string.IsNullOrWhiteSpace(newKeyName))" />
+        </div>
+    </RadzenStack>
+</RadzenCard>
+
+@if (!string.IsNullOrEmpty(newlyGeneratedKey))
+{
+    <RadzenAlert AlertStyle="AlertStyle.Success" Variant="Variant.Flat" Shade="Shade.Lighter" class="rz-mb-4">
+        <h4>New API Key Generated!</h4>
+        <p><strong>IMPORTANT:</strong> This is the only time you will see this key. Please copy it now!</p>
+        <RadzenStack Gap="0.5rem">
+            <div>
+                <RadzenLabel Text="API Key:" />
+                <RadzenTextBox Value="@newlyGeneratedKey" ReadOnly="true" class="w-100" />
+            </div>
+            <div>
+                <RadzenButton Text="Copy to Clipboard" ButtonStyle="ButtonStyle.Secondary"
+                             Click="CopyToClipboard" />
+                <RadzenButton Text="I've Saved It" ButtonStyle="ButtonStyle.Success"
+                             Click="ClearGeneratedKey" class="rz-ml-2" />
+            </div>
+        </RadzenStack>
+    </RadzenAlert>
+}
+
+<RadzenCard>
+    <h3>Existing API Keys</h3>
+    
+    @if (apiKeys == null)
+    {
+        <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+    }
+    else if (!apiKeys.Any())
+    {
+        <RadzenAlert AlertStyle="AlertStyle.Info" Variant="Variant.Flat" Shade="Shade.Lighter">
+            No API keys found. Create your first one above!
+        </RadzenAlert>
+    }
+    else
+    {
+        <RadzenDataGrid @ref="grid" Data="@apiKeys" TItem="ApiKeyRecord" AllowSorting="true" class="rz-mt-3">
+            <Columns>
+                <RadzenDataGridColumn TItem="ApiKeyRecord" Property="Name" Title="Name" Width="40%" />
+                <RadzenDataGridColumn TItem="ApiKeyRecord" Property="CreatedAt" Title="Created" Width="40%">
+                    <Template Context="key">
+                        @key.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="ApiKeyRecord" Title="Actions" Width="20%" Sortable="false">
+                    <Template Context="key">
+                        <RadzenButton Text="Delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small"
+                                     Click="@(() => DeleteKey(key.Name))" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    }
+</RadzenCard>
+
+@code {
+    private List<ApiKeyRecord>? apiKeys;
+    private string newKeyName = string.Empty;
+    private string newlyGeneratedKey = string.Empty;
+    private RadzenDataGrid<ApiKeyRecord>? grid;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadApiKeys();
+    }
+
+    private async Task LoadApiKeys()
+    {
+        apiKeys = await ApiKeyManager.GetAllKeysAsync();
+    }
+
+    private void OnKeyNameChanged(ChangeEventArgs e)
+    {
+        newKeyName = e.Value?.ToString() ?? string.Empty;
+        StateHasChanged();
+    }
+
+    private async Task GenerateNewKey()
+    {
+        if (string.IsNullOrWhiteSpace(newKeyName))
+            return;
+
+        try
+        {
+            newlyGeneratedKey = await ApiKeyManager.GenerateAsync(newKeyName.Trim());
+            newKeyName = string.Empty;
+            await LoadApiKeys();
+        }
+        catch (Exception ex)
+        {
+            // Handle error - in a real app you'd show a proper error message
+            Console.WriteLine($"Error generating API key: {ex.Message}");
+        }
+    }
+
+    private async Task CopyToClipboard()
+    {
+        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", newlyGeneratedKey);
+    }
+
+    private void ClearGeneratedKey()
+    {
+        newlyGeneratedKey = string.Empty;
+    }
+
+    private async Task DeleteKey(string keyName)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"Are you sure you want to delete the API key '{keyName}'?");
+        if (confirmed)
+        {
+            await ApiKeyManager.DeleteKeyAsync(keyName);
+            await LoadApiKeys();
+        }
+    }
+}
