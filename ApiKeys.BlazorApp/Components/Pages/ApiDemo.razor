@@ -1,0 +1,79 @@
+@page "/api-demo"
+@using System.Net.Http.Headers
+@inject HttpClient HttpClient
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>API Demo</PageTitle>
+
+<h1>API Demo</h1>
+<p>This page demonstrates how to use API keys to access secured endpoints.</p>
+
+<RadzenCard class="rz-mb-4">
+    <h3>Test API Endpoints</h3>
+    <RadzenStack Gap="1rem">
+        <div>
+            <RadzenLabel Text="API Key (optional for public endpoint):" />
+            <RadzenTextBox @bind-Value="apiKey" Placeholder="Enter your API key" class="w-100" />
+        </div>
+        <div>
+            <RadzenButton Text="Test Public Endpoint" ButtonStyle="ButtonStyle.Info" 
+                         Click="TestPublicEndpoint" />
+            <RadzenButton Text="Test Secure Endpoint" ButtonStyle="ButtonStyle.Primary" 
+                         Click="TestSecureEndpoint" class="rz-ml-2" />
+        </div>
+    </RadzenStack>
+</RadzenCard>
+
+@if (!string.IsNullOrEmpty(lastResponse))
+{
+    <RadzenCard>
+        <h4>Response:</h4>
+        <RadzenTextArea Value="@lastResponse" ReadOnly="true" Rows="10" class="w-100" />
+    </RadzenCard>
+}
+
+@code {
+    private string apiKey = string.Empty;
+    private string lastResponse = string.Empty;
+
+    private async Task TestPublicEndpoint()
+    {
+        try
+        {
+            var baseUri = Navigation.ToAbsoluteUri("/").ToString().TrimEnd('/');
+            var response = await HttpClient.GetAsync($"{baseUri}/api/demo/public");
+            var content = await response.Content.ReadAsStringAsync();
+            
+            lastResponse = $"Status: {response.StatusCode}\n\n{content}";
+        }
+        catch (Exception ex)
+        {
+            lastResponse = $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task TestSecureEndpoint()
+    {
+        try
+        {
+            var baseUri = Navigation.ToAbsoluteUri("/").ToString().TrimEnd('/');
+            var request = new HttpRequestMessage(HttpMethod.Get, $"{baseUri}/api/demo/secure");
+            
+            if (!string.IsNullOrWhiteSpace(apiKey))
+            {
+                request.Headers.Add("ApiKey", apiKey);
+            }
+            
+            var response = await HttpClient.SendAsync(request);
+            var content = await response.Content.ReadAsStringAsync();
+            
+            lastResponse = $"Status: {response.StatusCode}\n\n{content}";
+        }
+        catch (Exception ex)
+        {
+            lastResponse = $"Error: {ex.Message}";
+        }
+    }
+}
