@@ -2,6 +2,7 @@ using ApiKeys.BlazorApp.Components;
 using ApiKeys.Service;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication;
 using Radzen;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,6 +29,7 @@ builder.Services.AddScoped<ApiKeyManager>(provider => provider.GetRequiredServic
 builder.Services.AddHttpContextAccessor();
 
 // Add authorization services
+builder.Services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, ApiKeys.BlazorApp.NullAuthenticationHandler>("Null", options => { });
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("ApiKey", policy =>
