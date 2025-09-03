@@ -28,11 +28,10 @@ builder.Services.AddScoped<ApiKeyManager>(provider => provider.GetRequiredServic
 builder.Services.AddHttpContextAccessor();
 
 // Add authorization services
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("ApiKey", policy =>
+builder.Services.AddAuthorizationBuilder()
+								 // Add authorization services
+								 .AddPolicy("ApiKey", policy =>
         policy.Requirements.Add(new ApiKeyRequirement()));
-});
 
 builder.Services.AddScoped<IAuthorizationHandler, ApiKeyAuthorizationHandler>();
 
