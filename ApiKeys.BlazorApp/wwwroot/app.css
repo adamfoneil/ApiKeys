@@ -1,0 +1,31 @@
+html, body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.page {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main {
+    flex: 1;
+    padding: 20px;
+}
+
+.w-100 {
+    width: 100%;
+}
+
+.rz-mb-4 {
+    margin-bottom: 1.5rem;
+}
+
+.rz-ml-2 {
+    margin-left: 0.5rem;
+}
+
+.rz-mt-3 {
+    margin-top: 1rem;
+}
